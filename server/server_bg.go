@@ -20,17 +20,21 @@ func (s *Server) backgroundRoutines() {
 	go func() {
 		// initial state
 		s.state.Lock()
+		log.Printf("[LOCKED] bg/init")
 		s.state.Torrents = s.engine.GetTorrents()
 		s.state.Downloads = s.listFiles()
 		s.state.Unlock()
+		log.Printf("[UNLOCKED] bg/init")
 
 		for {
 			if s.state.NumConnections() > 0 {
 				// only update the state object if user connected
 				s.state.Lock()
+				log.Printf("[LOCKED] bg/num>0")
 				s.state.Torrents = s.engine.GetTorrents()
 				s.state.Downloads = s.listFiles()
 				s.state.Unlock()
+				log.Printf("[UNLOCKED] bg/num>0")
 				s.state.Push()
 			}
 			s.engine.TaskRoutine()

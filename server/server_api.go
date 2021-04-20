@@ -61,8 +61,10 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		json.NewEncoder(w).Encode(s.engine.GetTorrents())
 	case "files":
 		s.state.Lock()
+		log.Printf("[LOCKED] api/files")
 		json.NewEncoder(w).Encode(s.state.Downloads)
 		s.state.Unlock()
+		log.Printf("[UNLOCKED] api/files")
 	case "torrent":
 		if len(routeDirs) != 2 {
 			return errUnknowAct
@@ -79,11 +81,13 @@ func (s *Server) apiGET(w http.ResponseWriter, r *http.Request) error {
 		}
 	case "stat":
 		s.state.Lock()
+		log.Printf("[LOCKED] api/stat")
 		c := s.engine.Config()
 		s.state.Stats.System.loadStats(c.DownloadDirectory)
 		s.state.Stats.ConnStat = s.engine.ConnStat()
 		json.NewEncoder(w).Encode(s.state.Stats)
 		s.state.Unlock()
+		log.Printf("[UNLOCKED] api/stat")
 	case "enginedebug":
 		w.Header().Set("Content-Type", "text/plain")
 		s.engine.WriteStauts(w)

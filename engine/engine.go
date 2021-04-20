@@ -65,7 +65,9 @@ func (e *Engine) Configure(c *Config) error {
 	}
 
 	e.Lock()
+	log.Printf("[LOCKED] engine/Config")
 	defer e.Unlock()
+	defer log.Printf("[UNLOCKED] engine/Config")
 	tc := torrent.NewDefaultClientConfig()
 	tc.NoDefaultPortForwarding = c.NoDefaultPortForwarding
 	tc.DisableUTP = c.DisableUTP
@@ -131,7 +133,9 @@ func (e *Engine) Configure(c *Config) error {
 
 func (e *Engine) IsConfigred() bool {
 	e.RLock()
+	log.Printf("[RLOCKED] engine/IsConfigred")
 	defer e.RUnlock()
+	defer log.Printf("[UNRLOCKED] engine/IsConfigred")
 	return e.client != nil
 }
 
@@ -139,11 +143,13 @@ func (e *Engine) IsConfigred() bool {
 func (e *Engine) NewMagnet(magnetURI string) error {
 	log.Println("[NewMagnet] called: ", magnetURI)
 	e.RLock()
+	log.Printf("[RLOCKED] engine/NewMagnet")
 	tt, err := e.client.AddMagnet(magnetURI)
 	if err != nil {
 		return err
 	}
 	e.RUnlock()
+	log.Printf("[UNRLOCKED] engine/NewMagnet")
 	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
 	return e.addTorrentTask(tt)
 }
@@ -152,11 +158,13 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 	log.Println("[NewTorrentBySpec] called ")
 	e.RLock()
+	log.Printf("[LOCKED] engine/NewTorrentBySpec")
 	tt, _, err := e.client.AddTorrentSpec(spec)
 	if err != nil {
 		return err
 	}
 	e.RUnlock()
+	log.Printf("[UNRLOCKED] engine/NewTorrentBySpec")
 	return e.addTorrentTask(tt)
 }
 
@@ -264,8 +272,10 @@ func genEnv(dir, path, hash, ttype, api string, size int64, ts int64) []string {
 func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 	ih := tt.InfoHash().HexString()
 	e.RLock()
+	log.Printf("[RLOCKED] engine/upsertTorrent")
 	torrent, ok := e.ts[ih]
 	e.RUnlock()
+	log.Printf("[UNRLOCKED] engine/upsertTorrent")
 	if !ok {
 		torrent = &Torrent{
 			InfoHash: ih,
@@ -273,8 +283,10 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 			dropWait: make(chan struct{}),
 		}
 		e.Lock()
+		log.Printf("[LOCKED] engine/upsertTorrent")
 		e.ts[ih] = torrent
 		e.Unlock()
+		log.Printf("[UNLOCKED] engine/upsertTorrent")
 	}
 	//update torrent fields using underlying torrent
 	torrent.Update(tt)
@@ -283,7 +295,9 @@ func (e *Engine) upsertTorrent(tt *torrent.Torrent) *Torrent {
 
 func (e *Engine) getTorrent(infohash string) (*Torrent, error) {
 	e.RLock()
+	log.Printf("[RLOCKED] engine/getTorrent")
 	defer e.RUnlock()
+	defer log.Printf("[UNRLOCKED] engine/getTorrent")
 	ih := metainfo.NewHashFromHex(infohash)
 	t, ok := e.ts[ih.HexString()]
 	if !ok {
@@ -357,6 +371,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 
 	e.Lock()
+	log.Printf("[LOCKED] engine/DeleteTorrent")
 	if !t.Deleted {
 		close(t.dropWait)
 		t.Deleted = true
@@ -364,6 +379,7 @@ func (e *Engine) DeleteTorrent(infohash string) error {
 	}
 	delete(e.ts, t.InfoHash)
 	e.Unlock()
+	log.Printf("[UNLOCKED] engine/DeleteTorrent")
 
 	e.removeMagnetCache(infohash)
 	e.removeTorrentCache(infohash)
@@ -541,7 +557,9 @@ func (e *Engine) removeTorrentCache(infohash string) {
 
 func (e *Engine) WriteStauts(_w io.Writer) {
 	e.RLock()
+	log.Printf("[RLOCKED] engine/WriteStatus")
 	defer e.RUnlock()
+	defer log.Printf("[UNRLOCKED] engine/WriteStatus")
 	if e.client != nil {
 		e.client.WriteStatus(_w)
 	}
@@ -549,7 +567,9 @@ func (e *Engine) WriteStauts(_w io.Writer) {
 
 func (e *Engine) ConnStat() torrent.ConnStats {
 	e.RLock()
+	log.Printf("[RLOCKED] engine/ConnStat")
 	defer e.RUnlock()
+	defer log.Printf("[UNRLOCKED] engine/ConnStat")
 	if e.client != nil {
 		return e.client.ConnStats()
 	}

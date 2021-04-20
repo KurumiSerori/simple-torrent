@@ -47,6 +47,7 @@ func (s *Server) updateRSS() {
 		}
 
 		s.state.Lock()
+		log.Printf("[LOCKED] rss/item")
 		if oldmark, ok := s.state.rssMark[rss]; ok {
 			var lastIdx int
 			for i, item := range feed.Items {
@@ -72,9 +73,11 @@ func (s *Server) updateRSS() {
 			s.state.rssCache = s.state.rssCache[:200]
 		}
 		s.state.Unlock()
+		log.Printf("[UNLOCKED] rss/item")
 	}
 
 	s.state.Lock()
+	log.Printf("[LOCKED] rss/sort")
 	// sort the retrived feed by Published attr
 	// make sure the first is the latest
 	sort.Slice(s.state.rssCache, func(i, j int) bool {
@@ -84,6 +87,7 @@ func (s *Server) updateRSS() {
 		s.state.LatestRSSGuid = s.state.rssCache[0].GUID
 	}
 	s.state.Unlock()
+	log.Printf("[UNLOCKED] rss/sort")
 }
 
 func (s *Server) serveRSS(w http.ResponseWriter, r *http.Request) {
