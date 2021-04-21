@@ -145,11 +145,11 @@ func (e *Engine) NewMagnet(magnetURI string) error {
 	e.RLock()
 	log.Printf("[RLOCKED] engine/NewMagnet")
 	tt, err := e.client.AddMagnet(magnetURI)
+	e.RUnlock()
+	log.Printf("[UNRLOCKED] engine/NewMagnet")
 	if err != nil {
 		return err
 	}
-	e.RUnlock()
-	log.Printf("[UNRLOCKED] engine/NewMagnet")
 	e.newMagnetCacheFile(magnetURI, tt.InfoHash().HexString())
 	return e.addTorrentTask(tt)
 }
@@ -160,11 +160,11 @@ func (e *Engine) NewTorrentBySpec(spec *torrent.TorrentSpec) error {
 	e.RLock()
 	log.Printf("[LOCKED] engine/NewTorrentBySpec")
 	tt, _, err := e.client.AddTorrentSpec(spec)
+	e.RUnlock()
+	log.Printf("[UNRLOCKED] engine/NewTorrentBySpec")
 	if err != nil {
 		return err
 	}
-	e.RUnlock()
-	log.Printf("[UNRLOCKED] engine/NewTorrentBySpec")
 	return e.addTorrentTask(tt)
 }
 
